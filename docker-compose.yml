@@ -1,7 +1,7 @@
 services:
   db:
     image: mysql:latest
-    container_name: rent-db
+    container_name: rent_db
 #    env_file:
 #      - '.env'
     environment:
@@ -23,6 +23,23 @@ services:
     ports:
       - "33066:3306"
 
+  web:
+    build:
+      dockerfile: Dockerfile
+    restart: always
+    container_name: rental_service_project
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      #- DJANGO_SETTINGS_MODULE=core.settings
 
 volumes:
   mysql_data:

@@ -5,8 +5,6 @@ from datetime import timedelta
 import django
 import faker
 from factory import fuzzy
-
-from apps.bookings.permissions import CanRejectBooking
 from common.enums import Roles, PropertyType, BookingStatus
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
@@ -32,24 +30,32 @@ class UserFactory(factory.django.DjangoModelFactory):
     # first_name = factory.LazyAttribute(lambda _: faker_.unique.username())
     # email = factory.LazyAttribute(lambda obj: f"{obj.username}@email.com")
 
-    email = factory.Faker('email')
+    #email = factory.Faker('email')
 
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
 
-    role = factory.LazyAttribute(lambda: random.choice(Roles.choices()))
-    email = factory.LazyAttribute(lambda obj: f"{obj.username}@email.com")
+    #role = factory.LazyAttribute(lambda: random.choice(Roles.choices()))
+    role = Roles.RENTER.value
+    email = factory.LazyAttribute(lambda obj: f"{obj.last_name}_{obj.role}@email.com")
 
-    birthday = factory.LazyAttribute('date_of_birth', minimum_age=18, maximum_age=99)
+    birthday = factory.Faker('date_of_birth', minimum_age=18, maximum_age=99)
     age = factory.LazyAttribute(lambda obj: timezone.now().year - obj.birthday.year)
 
     phone_number = factory.LazyAttribute(lambda _: f"+{faker_.msisdn()}")
-    is_staff = False
+    #is_staff = False
     is_active = True
 
-    date_joined = factory.LazyAttribute(timezone.now)
+    #date_joined = factory.LazyAttribute(timezone.now)
 
-    password = factory.LazyAttribute(lambda: make_password("qwertz12345"))
+    password = factory.LazyFunction(lambda: make_password("qwertz12345"))
+
+class LandlordFactory(UserFactory):
+    role = Roles.LANDLORD.value
+
+
+class RenterFactory(UserFactory):
+    role = Roles.RENTER.value
 
 class ListingFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -79,36 +85,42 @@ class ListingFactory(factory.django.DjangoModelFactory):
     updated_at = factory.LazyAttribute(lambda obj: obj.start_date + timedelta(days=random.randint(1, 365)))
     is_active = True
 
-    is_active = factory.LazyAttribute(lambda: random.choice([True, False]))
+    #is_active = factory.LazyAttribute(lambda: random.choice([True, False]))
+
+class BookingFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Booking
+    listing = factory.SubFactory(ListingFactory)
+    user = factory.SubFactory(UserFactory)
+    check_in = factory.LazyFunction(
+            lambda: timezone.now() + timedelta(days=random.randint(1, 30))
+        )
+
+    check_out = factory.LazyAttribute(
+            lambda o: o.check_in + timedelta(days=random.randint(1, 14))
+        )
+        #status = factory.LazyAttribute(lambda: random.choice(BookingStatus.choices()))
+    status = BookingStatus.PENDING.value
+    created_at = factory.LazyAttribute(lambda: timezone.now())
 
 
 class ReviewFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Review
-
-    listing = factory.SubFactory(ListingFactory)
-    user = factory.SubFactory(UserFactory)
+    listing = factory.SelfAttribute("booking.listing")
+    user = factory.SelfAttribute("booking.user")
     rating = fuzzy.FuzzyFloat(1.0, 5.0)
     comment = factory.Faker('text', max_nb_chars=600)
     created_at = factory.LazyAttribute(lambda: timezone.now())
 
-class BookingFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Booking
-        listing = factory.SubFactory(ListingFactory)
-        user = factory.SubFactory(UserFactory)
-        check_in = factory.LazyAttribute(lambda: timezone.now())
-        check_out = factory.LazyAttribute(lambda obj: obj.start_date + timedelta(days=random.randint(1, 365)))
-
-        status = factory.LazyAttribute(lambda: random.choice(BookingStatus.choices()))
-        created_at = factory.LazyAttribute(lambda: timezone.now())
 
 
 if __name__ == "__main__":
-    print("!!")
-    UserFactory.create_batch(100)
-    ListingFactory.create_batch(100)
-    ReviewFactory.create_batch(300)
-    BookingFactory.create_batch(70)
-    print("DONE")
+    LandlordFactory.create_batch(20)
+    RenterFactory.create_batch(50)
 
+    ListingFactory.create_batch(100)
+    BookingFactory.create_batch(150)
+    ReviewFactory.create_batch(80)
+
+    print("DONE")
