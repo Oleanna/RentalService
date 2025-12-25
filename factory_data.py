@@ -25,28 +25,18 @@ faker_ = Faker()
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
-        #django_get_or_create = ('username',)
-
-    # first_name = factory.LazyAttribute(lambda _: faker_.unique.username())
-    # email = factory.LazyAttribute(lambda obj: f"{obj.username}@email.com")
-
-    #email = factory.Faker('email')
 
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
 
-    #role = factory.LazyAttribute(lambda: random.choice(Roles.choices()))
     role = Roles.RENTER.value
-    email = factory.LazyAttribute(lambda obj: f"{obj.last_name}_{obj.role}@email.com")
+
+    email = factory.LazyAttributeSequence(lambda obj, n: f"{obj.last_name.lower()}_{obj.role}_{n}@email.com")
 
     birthday = factory.Faker('date_of_birth', minimum_age=18, maximum_age=99)
-    age = factory.LazyAttribute(lambda obj: timezone.now().year - obj.birthday.year)
 
     phone_number = factory.LazyAttribute(lambda _: f"+{faker_.msisdn()}")
-    #is_staff = False
     is_active = True
-
-    #date_joined = factory.LazyAttribute(timezone.now)
 
     password = factory.LazyFunction(lambda: make_password("qwertz12345"))
 
@@ -61,59 +51,43 @@ class ListingFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Listing
 
-    country = factory.Faker('country')
-    city = factory.Faker('city')
-    street = factory.Faker('street_name')
-
-    # postcode = factory.Faker('postcode')
-    # building = factory.Faker('building_number')
-    # apartment = factory.Faker('apartment_number', min=1, max=9999)
-
+    landlord = factory.SubFactory(LandlordFactory)
+    title = factory.Faker('catch_phrase')
     location = factory.LazyAttribute(
-        lambda obj: f"{obj.street}, {obj.city}, {obj.country}"
+        lambda _: f"{faker_.street_name()}, {faker_.city()}, {faker_.country()}"
     )
-    landlord = factory.SubFactory(UserFactory)
-
-    title = factory.Faker('title')
     description = factory.Faker('paragraph')
     price = fuzzy.FuzzyDecimal(300, 5000, precision=2)
     rooms = fuzzy.FuzzyInteger(1, 5)
 
-    property_type = factory.LazyAttribute(lambda: random.choice(PropertyType.choices()))
-
-    created_at = factory.LazyAttribute(lambda: timezone.now())
-    updated_at = factory.LazyAttribute(lambda obj: obj.start_date + timedelta(days=random.randint(1, 365)))
+    property_type = factory.LazyAttribute(lambda _: random.choice(PropertyType.choices()))
     is_active = True
 
-    #is_active = factory.LazyAttribute(lambda: random.choice([True, False]))
 
 class BookingFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Booking
     listing = factory.SubFactory(ListingFactory)
-    user = factory.SubFactory(UserFactory)
+    renter = factory.SubFactory(RenterFactory)
     check_in = factory.LazyFunction(
-            lambda: timezone.now() + timedelta(days=random.randint(1, 30))
+            lambda : timezone.now() + timedelta(days=random.randint(1, 30))
         )
 
     check_out = factory.LazyAttribute(
-            lambda o: o.check_in + timedelta(days=random.randint(1, 14))
-        )
-        #status = factory.LazyAttribute(lambda: random.choice(BookingStatus.choices()))
+        lambda obj: obj.check_in + timedelta(days=random.randint(1, 364))
+    )
+    #status = factory.LazyAttribute(lambda: random.choice(BookingStatus.choices()))
     status = BookingStatus.PENDING.value
-    created_at = factory.LazyAttribute(lambda: timezone.now())
 
 
 class ReviewFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Review
-    listing = factory.SelfAttribute("booking.listing")
-    user = factory.SelfAttribute("booking.user")
+
+    listing = factory.SubFactory(ListingFactory)
+    user = factory.SubFactory(RenterFactory)
     rating = fuzzy.FuzzyFloat(1.0, 5.0)
     comment = factory.Faker('text', max_nb_chars=600)
-    created_at = factory.LazyAttribute(lambda: timezone.now())
-
-
 
 if __name__ == "__main__":
     LandlordFactory.create_batch(20)

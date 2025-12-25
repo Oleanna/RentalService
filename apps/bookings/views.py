@@ -36,7 +36,10 @@ class BookingCreateAPIView(CreateAPIView):
     queryset = Booking.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(renter=self.request.user)
+        serializer.save(
+            renter=self.request.user,
+            status = BookingStatus.PENDING.value
+        )
 
 
 class BookingConfirmAPIView(UpdateAPIView):
@@ -92,7 +95,7 @@ class BookingRejectAPIView(UpdateAPIView):
                 "Only bookings with status PENDING can be rejected"
             )
 
-        booking.status = BookingStatus.CANCELLED.value
+        booking.status = BookingStatus.CANCELED.value
         booking.save(update_fields=["status"])
 
         return Response(
