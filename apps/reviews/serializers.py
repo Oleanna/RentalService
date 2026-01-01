@@ -10,7 +10,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = "__all__"
-        read_only_fields = ("user", "created_at")
+        read_only_fields = ("user", "listing", "created_at")
 
     def validate_rating(self, value: int) -> int:
         if not 1 <= value <= 5:
@@ -19,14 +19,14 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         request = self.context["request"]
-        listing = attrs["listing"]
+        listing_id = self.context["listing_id"]
         now = timezone.now()
 
         has_confirmed_booking = Booking.objects.filter(
-            listing=listing,
+            listing_id=listing_id,
             renter=request.user,
             status=BookingStatus.CONFIRMED.value,
-            check_out__lt = now,
+            check_out__lt=now,
         ).exists()
 
         if not has_confirmed_booking:
@@ -35,7 +35,3 @@ class ReviewSerializer(serializers.ModelSerializer):
             )
 
         return attrs
-
-    def create(self, validated_data):
-        validated_data["user"] = self.context["request"].user
-        return super().create(validated_data)

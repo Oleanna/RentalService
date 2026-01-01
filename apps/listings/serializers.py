@@ -24,6 +24,7 @@ class ListingCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Listing
         fields = [
+            "id",
             "title",
             "description",
             "location",
@@ -32,3 +33,4 @@ class ListingCreateUpdateSerializer(serializers.ModelSerializer):
             "property_type",
             "is_active"
         ]
+        read_only_fields = ["id", ]
