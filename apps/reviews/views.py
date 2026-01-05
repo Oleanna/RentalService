@@ -27,4 +27,4 @@ class ListingReviewsAPIView(ListAPIView):
 
     def get_queryset(self):
         listing_id = self.kwargs.get("listing_id")
-        return Review.objects.filter(listing_id=listing_id)
+        return Review.objects.fgitilter(listing_id=listing_id)
