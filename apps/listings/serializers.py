@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from apps.listings.models import Listing
+from common.enums import PropertyType
+
 
 class ListingDetailSerializer(serializers.ModelSerializer):#deteil
     class Meta:
@@ -21,6 +23,18 @@ class ListingListSerializer(serializers.ModelSerializer):
         ]
 
 class ListingCreateUpdateSerializer(serializers.ModelSerializer):
+
+    def validate_property_type(self, value: str):
+        value = value.strip().upper()
+
+        allowed = {choice[0] for choice in PropertyType.choices()}
+        if value not in allowed:
+            raise serializers.ValidationError(
+                f"Invalid property_type. Allowed: {', '.join(allowed)}"
+            )
+
+        return value
+
     class Meta:
         model = Listing
         fields = [

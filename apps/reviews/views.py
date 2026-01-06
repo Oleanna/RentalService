@@ -13,14 +13,18 @@ class CreateReviewAPIView(CreateAPIView):
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["listing"] = get_object_or_404(
+            Listing, id=self.kwargs["listing_id"], is_active=True
+        )
+        return context
+
     def perform_create(self, serializer):
-        listing = get_object_or_404(Listing, id=self.kwargs["listing_id"])
-
-        if not listing.is_active:
-            raise ValidationError("Listing not found")
-
-        serializer.save(user=self.request.user, listing=listing)
-
+        serializer.save(
+            user=self.request.user,
+            listing=self.get_serializer_context()["listing"]
+        )
 
 class ListingReviewsAPIView(ListAPIView):
     serializer_class = ReviewSerializer
