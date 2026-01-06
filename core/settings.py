@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     "phonenumber_field",
     "django_filters",
 
+    "rest_framework_simplejwt.token_blacklist",
+
     "apps.users.apps.UsersConfig",
     "apps.listings.apps.ListingsConfig",
     "apps.bookings.apps.BookingsConfig",
