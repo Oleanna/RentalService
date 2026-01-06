@@ -20,6 +20,9 @@ class ReviewSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         request = self.context["request"]
         listing_id = self.context["listing_id"]
+        if not listing_id:
+            raise serializers.ValidationError("Listing id is required")
+
         now = timezone.now()
 
         has_confirmed_booking = Booking.objects.filter(

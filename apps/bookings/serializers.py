@@ -33,6 +33,11 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
         now = timezone.now()
 
+        if not listing.is_active:
+            raise serializers.ValidationError(
+                "Cannot create booking for inactive listing"
+            )
+
         if check_in < now or check_out < now:
             raise serializers.ValidationError(
                 "Check-in and check-out cannot be in the past."
