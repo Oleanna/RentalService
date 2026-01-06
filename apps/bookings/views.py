@@ -1,4 +1,6 @@
 from django.shortcuts import render
+from django.utils import timezone
+from datetime import timedelta
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
@@ -73,6 +75,14 @@ class BookingCancelAPIView(UpdateAPIView):
 
         if booking.status == BookingStatus.CANCELED.value:
             raise ValidationError("Booking already canceled")
+
+        now = timezone.now()
+        time_before_check_in = booking.check_in - now
+
+        if time_before_check_in < timedelta(days=2):
+            raise ValidationError(
+                "Booking cannot be canceled less than 2 days before check-in."
+            )
 
         booking.status = BookingStatus.CANCELED.value
         booking.save(update_fields=["status"])
